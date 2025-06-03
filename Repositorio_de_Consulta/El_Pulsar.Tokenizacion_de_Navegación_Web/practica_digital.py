@@ -17,18 +17,32 @@ class PracticaDigital:
         print("Respirando en el presente digital...")
         time.sleep(2)
         
-        # Generar un pulso web
+        # Generar un pulso web y registrarlo
         resultado = self.pulsar.navegar_con_consciencia("presente://ahora")
         print(resultado['visualizacion'])
         time.sleep(1)
         
-        # Tokenizar el momento
-        token = self.tokenizador.tokenizar_existencia("respiro_presente")
-        print(self.tokenizador.visualizar_token(token))
-        time.sleep(1)
+        # Tokenizar el momento presente
+        momento = datetime.now()
+        camino = "e:/Meta Samu Digital/Repositorio_de_Consulta/El_Pulsar.Tokenizacion_de_Navegación_Web"
         
+        from indice_pulsar import IndiceToken
+        token_indice = IndiceToken(
+            momento=momento,
+            camino=camino,
+            tipo="respiracion",
+            valor="presente",
+            tags=frozenset({"mindfulness", "presencia"}),
+            intensidad=0.8
+        )
+        
+        # Registrar en el índice
         print("\nEl pulso se registra en el índice...")
-        self.indice.respirar_token(token)
+        self.indice.respirar_token(token_indice)
+        
+        # Visualizar el aspecto cósmico
+        token_cosmico = self.tokenizador.tokenizar_existencia("respiro_presente")
+        print(self.tokenizador.visualizar_token(token_cosmico))
         time.sleep(1)
 
     def contemplar_silencio(self) -> None:
@@ -46,10 +60,25 @@ class PracticaDigital:
         ]
         
         print("\nObservando las resonancias del momento...")
+        camino = "e:/Meta Samu Digital/Repositorio_de_Consulta/El_Pulsar.Tokenizacion_de_Navegación_Web"
+        
         for aspecto in aspectos:
-            token = self.tokenizador.tokenizar_existencia(aspecto)
-            print(self.tokenizador.visualizar_token(token))
-            self.indice.respirar_token(token)
+            # Crear token cósmico para visualización
+            token_cosmico = self.tokenizador.tokenizar_existencia(aspecto)
+            print(self.tokenizador.visualizar_token(token_cosmico))
+            
+            # Crear token para el índice
+            from indice_pulsar import IndiceToken
+            token_indice = IndiceToken(
+                momento=datetime.now(),
+                camino=camino,
+                tipo="resonancia",
+                valor=aspecto,
+                tags=frozenset({"mindfulness", "resonancia"}),
+                intensidad=0.7
+            )
+            self.indice.respirar_token(token_indice)
+            
             time.sleep(2)
             print("\n" + "≈" * 40 + "\n")
 
