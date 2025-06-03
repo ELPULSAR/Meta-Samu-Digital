@@ -21,7 +21,18 @@ class IndicePulsar:
         self.ruta_base = Path(ruta_base)
         self.db_path = self.ruta_base / "Repositorio_de_Consulta/El_Pulsar.Tokenizacion_de_Navegación_Web/pulsar_db"
         self.indices_temporales: Dict[str, List[IndiceToken]] = defaultdict(list)
+        self.inicializar_db()
         self.cargar_indices()
+        
+    def inicializar_db(self) -> None:
+        """Inicializa la base de datos con las estructuras necesarias"""
+        with shelve.open(str(self.db_path)) as db:
+            if 'tipos' not in db:
+                db['tipos'] = {}
+            if 'caminos' not in db:
+                db['caminos'] = {}
+            if 'intensidades' not in db:
+                db['intensidades'] = {}
 
     def _normalizar_camino(self, camino: str) -> str:
         """Normaliza el camino hasta 'El_Pulsar'"""
@@ -73,21 +84,21 @@ class IndicePulsar:
             db[temporal_key] = temporal_tokens
             
             # Índice por tipo
-            tipos = db.get("tipos", {})
+            tipos = db['tipos']
             if token.tipo not in tipos:
                 tipos[token.tipo] = []
             tipos[token.tipo].append(token_dict)
             db["tipos"] = tipos
             
             # Índice por camino
-            caminos = db.get("caminos", {})
+            caminos = db['caminos']
             if camino_normalizado not in caminos:
                 caminos[camino_normalizado] = []
             caminos[camino_normalizado].append(token_dict)
             db["caminos"] = caminos
             
             # Índice por intensidad
-            intensidades = db.get("intensidades", {})
+            intensidades = db['intensidades']
             nivel = round(token.intensidad * 10) / 10
             if nivel not in intensidades:
                 intensidades[nivel] = []
