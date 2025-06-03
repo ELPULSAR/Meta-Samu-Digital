@@ -32,33 +32,66 @@ class IndicePulsar:
         except ValueError:
             return camino
 
+    def _token_to_dict(self, token: IndiceToken) -> dict:
+        """Convierte un token a diccionario para persistencia"""
+        return {
+            'momento': token.momento.isoformat(),
+            'camino': token.camino,
+            'tipo': token.tipo,
+            'valor': token.valor,
+            'tags': list(token.tags),
+            'intensidad': token.intensidad
+        }
+    
+    def _dict_to_token(self, data: dict) -> IndiceToken:
+        """Convierte un diccionario a token"""
+        return IndiceToken(
+            momento=datetime.fromisoformat(data['momento']),
+            camino=data['camino'],
+            tipo=data['tipo'],
+            valor=data['valor'],
+            tags=frozenset(data['tags']),
+            intensidad=data['intensidad']
+        )
+
     def respirar_token(self, token: IndiceToken) -> None:
         """Registra un nuevo token en el índice con consciencia"""
         camino_normalizado = self._normalizar_camino(token.camino)
-        
-        # Indexar por momento (año-mes-día)
         fecha_key = token.momento.strftime("%Y-%m-%d")
+        
+        # Convertir token a formato persistente
+        token_dict = self._token_to_dict(token)
+        
+        # Actualizar índices en memoria
         self.indices_temporales[fecha_key].append(token)
         
         # Persistir en la base de datos
         with shelve.open(str(self.db_path)) as db:
             # Índice temporal
-            db[f"temporal_{fecha_key}"] = self.indices_temporales[fecha_key]
+            temporal_key = f"temporal_{fecha_key}"
+            temporal_tokens = [self._token_to_dict(t) for t in self.indices_temporales[fecha_key]]
+            db[temporal_key] = temporal_tokens
             
             # Índice por tipo
-            tipos = db.get("tipos", defaultdict(list))
-            tipos[token.tipo].append(token)
+            tipos = db.get("tipos", {})
+            if token.tipo not in tipos:
+                tipos[token.tipo] = []
+            tipos[token.tipo].append(token_dict)
             db["tipos"] = tipos
             
             # Índice por camino
-            caminos = db.get("caminos", defaultdict(list))
-            caminos[camino_normalizado].append(token)
+            caminos = db.get("caminos", {})
+            if camino_normalizado not in caminos:
+                caminos[camino_normalizado] = []
+            caminos[camino_normalizado].append(token_dict)
             db["caminos"] = caminos
             
             # Índice por intensidad
-            intensidades = db.get("intensidades", defaultdict(list))
-            nivel = round(token.intensidad * 10) / 10  # Redondear a décimas
-            intensidades[nivel].append(token)
+            intensidades = db.get("intensidades", {})
+            nivel = round(token.intensidad * 10) / 10
+            if nivel not in intensidades:
+                intensidades[nivel] = []
+            intensidades[nivel].append(token_dict)
             db["intensidades"] = intensidades
 
     def observar_presente(self, 
@@ -112,7 +145,10 @@ class IndicePulsar:
                 for key in db:
                     if key.startswith("temporal_"):
                         fecha = key.replace("temporal_", "")
-                        self.indices_temporales[fecha] = db[key]
+                        tokens_dict = db[key]
+                        self.indices_temporales[fecha] = [
+                            self._dict_to_token(t) for t in tokens_dict
+                        ]
 
     def visualizar_indice(self, tokens: List[IndiceToken]) -> str:
         """Crea una visualización zen de los tokens indexados"""
